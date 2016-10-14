@@ -8,7 +8,6 @@ close all;
 % 1. Read the given video
 filename='cube.mp4';
 cubeVid = VideoReader(filename);
-nframes = cubeVid.NumberOfFrames;  %for using afterwards
 % 2. Read single frame
 singleFrame = read(cubeVid, 1);
 figure, imshow(singleFrame); title('Single frame: First frame');
@@ -56,73 +55,39 @@ fprintf('Program paused. Press enter to continue.\n');
 pause;
 close all;
 
-% 8. Obtain the centroid of the red object.
+% 8. Obtain the centroid of the red object (Frame 20, marked as blue).
 [x,y] = find (highlightImg) ;
-CenterOfMassXY = [mean(x) mean(y)] ;
-CenterOfMassXY = round(CenterOfMassXY);
-frame20(CenterOfMassXY(1),CenterOfMassXY(2),1) = 0;
-frame20(CenterOfMassXY(1),CenterOfMassXY(2),2) = 0;
-frame20(CenterOfMassXY(1),CenterOfMassXY(2),3) = 255;
-figure, imshow(frame20); title('Centroid of Red Object.');
+centre = round([mean(x) mean(y)]);
+figure, imshow(frame20); title('Centroid of Red Object.'); hold on;
+plot(centre(2), centre(1), 'b.'); hold off;
 fprintf('Program paused. Press enter to continue.\n');
 pause;
 close all;
 
+% 9. Showing the trajectory of the centroid of the red
+allCentreX = [];
+allCentreY = [];
+for k = 1 : cubeVid.NumberOfFrames
+    singleFrame = read(cubeVid, k);
+    frameRed = singleFrame(:,:,1);
+    frameBlue = singleFrame(:,:,3);
+    invertBlue = 255 - frameBlue;
+    multiFrame = uint8((double(frameRed) .* double(invertBlue)) ./ 400);
+    highlightImg = im2bw(multiFrame, 0.3);
+    [x,y] = find (highlightImg) ;
+    centre = round([mean(x) mean(y)]);
+    allCentreX = [allCentreX centre(2)];
+    allCentreY = [allCentreY centre(1)];
+%%  test code for each frame check
+%     figure, imshow(read(cubeVid, k)); title('Trajectory of the centroid'); hold on;
+%     plot(centre(2), centre(1), 'bo');
+%     hold off;
+%     fprintf('Program paused. Press enter to continue.\n');
+%     pause;
+end
 
+centroidPlot = figure, imshow(read(cubeVid, 1)); title('Trajectory of the centroid'); hold on;
+plot(allCentreX, allCentreY, 'b.');
+hold off;
+saveas(centroidPlot, 'im3.jpg')
 
-
-
-
-
-% redCubeValue = 50;
-% redCube = rgb2gray(read(cubeVid,71));
-% noDarkCar = imextendedmax(redCube, redCubeValue);
-% imshow(redCube)
-% figure, imshow(redCube)
-% 
-% sedisk = strel('disk',2);
-% noSmallStructures = imopen(noDarkCar, sedisk);
-% imshow(noSmallStructures)
-% 
-% nframes = cubeVid.NumberOfFrames;
-% I = read(cubeVid, 1);
-% taggedCars = zeros([size(I,1) size(I,2) 3 nframes], class(I));
-% 
-% for k = 1 : nframes
-%     singleFrame = read(cubeVid, k);
-% 
-%     % Convert to grayscale to do morphological processing.
-%     I = rgb2gray(singleFrame);
-% 
-%     % Remove dark cars.
-%     noDarkCars = imextendedmax(I, redCubeValue);
-% 
-%     % Remove lane markings and other non-disk shaped structures.
-%     noSmallStructures = imopen(noDarkCars, sedisk);
-% 
-%     % Remove small structures.
-%     noSmallStructures = bwareaopen(noSmallStructures, 150);
-% 
-%     % Get the area and centroid of each remaining object in the frame. The
-%     % object with the largest area is the light-colored car.  Create a copy
-%     % of the original frame and tag the car by changing the centroid pixel
-%     % value to red.
-%     taggedCars(:,:,:,k) = singleFrame;
-% 
-%     stats = regionprops(noSmallStructures, {'Centroid','Area'});
-%     if ~isempty([stats.Area])
-%         areaArray = [stats.Area];
-%         [junk,idx] = max(areaArray);
-%         c = stats(idx).Centroid;
-%         c = floor(fliplr(c));
-%         width = 2;
-%         row = c(1)-width:c(1)+width;
-%         col = c(2)-width:c(2)+width;
-%         taggedCars(row,col,1,k) = 255;
-%         taggedCars(row,col,2,k) = 0;
-%         taggedCars(row,col,3,k) = 0;
-%     end
-% end
-% 
-% frameRate = cubeVid.FrameRate;
-% implay(taggedCars,frameRate);
